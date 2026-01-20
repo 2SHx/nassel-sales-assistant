@@ -40,7 +40,7 @@ class SearchCriteria(BaseModel):
     city: Optional[str] = None
 
 class ProjectResponse(BaseModel):
-    project_id: str  # Previously 'id'
+    project_id: int  # Changed from str to int to match DB
     project_name: str
     direction: str  # Previously 'zone'
     district: str
