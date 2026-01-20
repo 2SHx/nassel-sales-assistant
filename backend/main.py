@@ -32,7 +32,7 @@ app.add_middleware(
 # --- Models ---
 
 class SearchCriteria(BaseModel):
-    zone: str
+    direction: str  # Previously 'zone'
     budget: float
     district: Optional[str] = None
     unit_type: Optional[str] = None
@@ -40,25 +40,25 @@ class SearchCriteria(BaseModel):
     city: Optional[str] = None
 
 class ProjectResponse(BaseModel):
-    id: str
+    project_id: str  # Previously 'id'
     project_name: str
-    zone: str
+    direction: str  # Previously 'zone'
     district: str
-    status: str
-    min_price_available: float
-    available_units: int
+    project_status: str  # Previously 'status'
+    min_available_price: float  # Previously 'min_price_available'
+    available_units: float  # Changed to float to match DB
     
     # Extended Fields
-    amenities: Optional[str] = None
-    location_link: Optional[str] = None
-    brochure_link: Optional[str] = None
+    facilities: Optional[str] = None  # Previously 'amenities'
+    location_url: Optional[str] = None  # Previously 'location_link'
+    brochure_url: Optional[str] = None  # Previously 'brochure_link'
     project_type: Optional[str] = None
     unit_types: Optional[str] = None
-    max_price_available: Optional[float] = None
-    min_area_available: Optional[float] = None
-    max_area_available: Optional[float] = None
-    min_bedrooms: Optional[int] = None
-    max_bedrooms: Optional[int] = None
+    max_available_price: Optional[float] = None  # Previously 'max_price_available'
+    min_available_area: Optional[float] = None  # Previously 'min_area_available'
+    max_available_area: Optional[float] = None  # Previously 'max_area_available'
+    min_available_bedrooms: Optional[int] = None  # Previously 'min_bedrooms'
+    max_available_bedrooms: Optional[int] = None  # Previously 'max_bedrooms'
     
     marketing_pitch: Optional[str] = None
     match_score: int
@@ -70,7 +70,7 @@ def search_projects(criteria: SearchCriteria):
         raise HTTPException(status_code=500, detail="Database configuration missing.")
 
     # Base Query
-    query = supabase.table("projects").select("*").eq("zone", criteria.zone).gt("available_units", 0)
+    query = supabase.table("projects").select("*").eq("direction", criteria.direction).gt("available_units", 0)
     
     # 0. City Filter
     if criteria.city:
@@ -78,7 +78,7 @@ def search_projects(criteria: SearchCriteria):
 
     # 1. Smart Budget Filtering (Allow +20% stretch)
     max_budget = criteria.budget * 1.20
-    query = query.lte("min_price_available", max_budget)
+    query = query.lte("min_available_price", max_budget)
     
     # 2. Strict Unit Type Filter (if provided)
     if criteria.unit_type and criteria.unit_type != "":
@@ -86,7 +86,7 @@ def search_projects(criteria: SearchCriteria):
 
     # 3. Area Filter (if provided)
     if criteria.min_area:
-        query = query.gte("max_area_available", criteria.min_area)
+        query = query.gte("max_available_area", criteria.min_area)
 
     try:
         response = query.execute()
@@ -107,7 +107,7 @@ def search_projects(criteria: SearchCriteria):
         # We calculate how "good" the price is relative to budget.
         # If perfectly within budget = 40.
         # If slightly over, score decays proportionally.
-        project_price = float(project.get("min_price_available") or 0)
+        project_price = float(project.get("min_available_price") or 0)
         target_budget = criteria.budget
         
         if project_price <= target_budget:
@@ -129,7 +129,7 @@ def search_projects(criteria: SearchCriteria):
                 score += 15 # Full 30 points for location
 
         # 3. Area Match Score (Max 20 points)
-        min_area = float(project.get("min_area_available") or 0)
+        min_area = float(project.get("min_available_area") or 0)
         target_area = criteria.min_area or 0
         
         if target_area > 0:
@@ -157,12 +157,12 @@ def search_projects(criteria: SearchCriteria):
         # Step C: Generate "Sales Script" in Arabic
         formatted_price = "{:,.0f}".format(project_price)
         project_name = project.get("project_name")
-        zone = project.get("zone")
+        direction = project.get("direction")
         
-        script = f"بناءً على طلبك في {zone}، أرشح لك '{project_name}'. "
+        script = f"بناءً على طلبك في {direction}، أرشح لك '{project_name}'. "
         
         if criteria.unit_type:
-            script += f"يتوفر لديهم {criteria.unit_type} بمساحات تبدأ من {project.get('min_area_available')}م². "
+            script += f"يتوفر لديهم {criteria.unit_type} بمساحات تبدأ من {project.get('min_available_area')}م². "
         
         script += f"السعر يبدأ من {formatted_price} ريال. "
         
@@ -182,13 +182,13 @@ def search_projects(criteria: SearchCriteria):
     return ranked_projects[:6]
 
 @app.get("/districts", response_model=List[str])
-def get_districts(zone: Optional[str] = None, city: Optional[str] = None):
+def get_districts(direction: Optional[str] = None, city: Optional[str] = None):
     query = supabase.table("projects").select("district")
     
     if city:
         query = query.eq("city", city)
-    if zone:
-        query = query.eq("zone", zone)
+    if direction:
+        query = query.eq("direction", direction)
         
     try:
         res = query.execute()
