@@ -40,25 +40,48 @@ class SearchCriteria(BaseModel):
     city: Optional[str] = None
 
 class ProjectResponse(BaseModel):
-    project_id: int  # Changed from str to int to match DB
+    project_id: int
     project_name: str
-    direction: str  # Previously 'zone'
+    direction: str
     district: str
-    project_status: str  # Previously 'status'
-    min_available_price: float  # Previously 'min_price_available'
-    available_units: float  # Changed to float to match DB
+    project_status: str
+    min_available_price: float
+    available_units: float
     
     # Extended Fields
-    facilities: Optional[str] = None  # Previously 'amenities'
-    location_url: Optional[str] = None  # Previously 'location_link'
-    brochure_url: Optional[str] = None  # Previously 'brochure_link'
+    project_code: Optional[str] = None
+    owner: Optional[str] = None
+    project_number: Optional[float] = None
     project_type: Optional[str] = None
     unit_types: Optional[str] = None
-    max_available_price: Optional[float] = None  # Previously 'max_price_available'
-    min_available_area: Optional[float] = None  # Previously 'min_area_available'
-    max_available_area: Optional[float] = None  # Previously 'max_area_available'
-    min_available_bedrooms: Optional[int] = None  # Previously 'min_bedrooms'
-    max_available_bedrooms: Optional[int] = None  # Previously 'max_bedrooms'
+    opening_date: Optional[str] = None
+    location_url: Optional[str] = None
+    brochure_url: Optional[str] = None
+    videos_url: Optional[str] = None
+    images_url: Optional[str] = None
+    facilities: Optional[str] = None
+    
+    # Stats
+    total_units: Optional[float] = None
+    sold_units: Optional[float] = None
+    reserved_units: Optional[float] = None
+    sales_percentage: Optional[float] = None
+    
+    # Price
+    max_available_price: Optional[float] = None
+    min_price: Optional[float] = None
+    max_price: Optional[float] = None
+    avg_unit_value: Optional[float] = None
+    
+    # Area
+    min_available_area: Optional[float] = None
+    max_available_area: Optional[float] = None
+    min_area: Optional[float] = None
+    max_area: Optional[float] = None
+    
+    # Rooms
+    min_available_bedrooms: Optional[float] = None
+    max_available_bedrooms: Optional[float] = None
     
     marketing_pitch: Optional[str] = None
     match_score: int
@@ -69,8 +92,10 @@ def search_projects(criteria: SearchCriteria):
     if not supabase:
         raise HTTPException(status_code=500, detail="Database configuration missing.")
 
-    # Base Query
-    query = supabase.table("projects").select("*").eq("direction", criteria.direction).gt("available_units", 0)
+    # Select all available columns
+    query = supabase.table("projects").select(
+        "project_id,project_code,owner,project_number,project_name,project_status,project_type,unit_types,opening_date,location_url,direction,district,brochure_url,videos_url,images_url,facilities,total_units,available_units,reserved_units,sold_units,avg_unit_value,sales_percentage,min_price,min_available_price,max_price,max_available_price,min_area,min_available_area,max_area,max_available_area,min_available_bedrooms,max_available_bedrooms"
+    ).eq("direction", criteria.direction).gt("available_units", 0)
     
     # 0. City Filter
     if criteria.city:

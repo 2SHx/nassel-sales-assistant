@@ -7,10 +7,11 @@
 set -e
 
 # Configuration
-PROJECT_ID="${GCP_PROJECT_ID:-your-gcp-project-id}"
+PROJECT_ID="${GCP_PROJECT_ID:-nassel-sales-app}"
 REGION="me-central1"  # Middle East region for Saudi Arabia
 BACKEND_SERVICE="nassel-backend"
 FRONTEND_SERVICE="nassel-frontend"
+ARTIFACT_REGISTRY="${REGION}-docker.pkg.dev/${PROJECT_ID}/nassel-app"
 
 echo "🚀 نَصِل Deployment to GCP Cloud Run"
 echo "======================================"
@@ -35,17 +36,25 @@ gcloud services enable cloudbuild.googleapis.com
 gcloud services enable run.googleapis.com
 gcloud services enable artifactregistry.googleapis.com
 
+# Create Artifact Registry repository if it doesn't exist
+echo "📦 Ensuring Artifact Registry repository exists..."
+gcloud artifacts repositories describe nassel-app --location=$REGION 2>/dev/null || \
+    gcloud artifacts repositories create nassel-app \
+        --repository-format=docker \
+        --location=$REGION \
+        --description="Nassel Sales App container images"
+
 # ----- BACKEND DEPLOYMENT -----
 echo ""
 echo "🔨 Building and deploying BACKEND..."
 cd backend
 
-# Build and push using Cloud Build
-gcloud builds submit --tag gcr.io/$PROJECT_ID/$BACKEND_SERVICE
+# Build and push using Cloud Build to Artifact Registry
+gcloud builds submit --tag ${ARTIFACT_REGISTRY}/${BACKEND_SERVICE}
 
 # Deploy to Cloud Run
 gcloud run deploy $BACKEND_SERVICE \
-    --image gcr.io/$PROJECT_ID/$BACKEND_SERVICE \
+    --image ${ARTIFACT_REGISTRY}/${BACKEND_SERVICE} \
     --platform managed \
     --region $REGION \
     --allow-unauthenticated \
@@ -65,12 +74,12 @@ cd frontend
 # Update API URL in environment (create .env.production)
 echo "VITE_API_URL=$BACKEND_URL" > .env.production
 
-# Build and push using Cloud Build
-gcloud builds submit --tag gcr.io/$PROJECT_ID/$FRONTEND_SERVICE
+# Build and push using Cloud Build to Artifact Registry
+gcloud builds submit --tag ${ARTIFACT_REGISTRY}/${FRONTEND_SERVICE}
 
 # Deploy to Cloud Run
 gcloud run deploy $FRONTEND_SERVICE \
-    --image gcr.io/$PROJECT_ID/$FRONTEND_SERVICE \
+    --image ${ARTIFACT_REGISTRY}/${FRONTEND_SERVICE} \
     --platform managed \
     --region $REGION \
     --allow-unauthenticated

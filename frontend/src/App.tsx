@@ -4,31 +4,48 @@ import { Search, MapPin, Home, DollarSign, Maximize, TrendingUp, Sparkles, X, Ch
 
 // --- Types ---
 interface Project {
-    id: string;
+    project_id: number;
     project_name: string;
-    zone: 'شمال' | 'جنوب' | 'شرق' | 'غرب';
+    direction: 'شمال' | 'جنوب' | 'شرق' | 'غرب';
     district: string;
-    min_price_available: number;
-    max_price_available?: number;
-    min_area_available: number;
-    max_area_available?: number;
-    max_bedrooms: number;
-    min_bedrooms: number;
-    status: string;
+    min_available_price: number;
+    max_available_price?: number;
+    min_available_area: number;
+    max_available_area?: number;
+    max_available_bedrooms: number;
+    min_available_bedrooms: number;
+    project_status: string;
     match_score: number;
     sales_script: string;
     marketing_pitch: string;
     unit_types: string;
-    amenities: string;
-    location_link: string;
-    brochure_link: string;
+    facilities: string;
+    location_url: string;
+    brochure_url: string;
     available_units: number;
     project_type: string;
+
+    // Extended fields
+    project_code?: string;
+    owner?: string;
+    project_number?: number;
+    opening_date?: string;
+    videos_url?: string;
+    images_url?: string;
+    total_units?: number;
+    sold_units?: number;
+    reserved_units?: number;
+    sales_percentage?: number;
+    min_price?: number;
+    max_price?: number;
+    avg_unit_value?: number;
+    min_area?: number;
+    max_area?: number;
 }
 
 interface SearchFilters {
     unitType: string;
-    zone: string;
+    direction: string;
     region: string;
     district: string;
     maxPrice: number;
@@ -220,13 +237,26 @@ const ProjectModal: React.FC<{ project: Project; onClose: () => void }> = ({ pro
                                     تطابق {project.match_score}%
                                 </span>
                                 <span className="bg-white/20 backdrop-blur-md text-white px-3 py-1 rounded-full text-xs font-bold border border-white/20">
-                                    {project.status || 'متاح'}
+                                    {project.project_status || 'متاح'}
                                 </span>
+                                {project.sales_percentage && (
+                                    <span className="bg-blue-500/80 backdrop-blur-md text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg flex items-center gap-1.5">
+                                        تم بيع {project.sales_percentage}%
+                                    </span>
+                                )}
                             </div>
                             <h2 className="text-5xl font-black text-white tracking-tight mb-2 shadow-sm">{project.project_name}</h2>
-                            <div className="flex items-center gap-2 text-purple-200 font-medium text-lg">
-                                <MapPin className="w-5 h-5" />
-                                {project.district}، {project.zone}
+                            <div className="flex items-center gap-4 text-purple-200 font-medium text-lg">
+                                <div className="flex items-center gap-2">
+                                    <MapPin className="w-5 h-5" />
+                                    {project.district}، {project.direction}
+                                </div>
+                                {project.owner && (
+                                    <div className="flex items-center gap-2 border-r-2 border-purple-400/30 pr-4 mr-4">
+                                        <Building2 className="w-5 h-5 text-purple-300" />
+                                        المطور: {project.owner}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -237,10 +267,10 @@ const ProjectModal: React.FC<{ project: Project; onClose: () => void }> = ({ pro
                     {/* Stats Cards */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
                         {[
-                            { label: 'نطاق الأسعار', val: <span>{Number(project.min_price_available).toLocaleString('en-US')} <span className="text-xs opacity-60 font-normal">ر.س</span></span> },
-                            { label: 'المساحات', val: <span>{Number(project.min_area_available).toLocaleString('en-US')} <span className="text-xs opacity-60 font-normal">م²</span></span> },
+                            { label: 'نطاق الأسعار', val: <span>{Number(project.min_available_price).toLocaleString('en-US')} <span className="text-xs opacity-60 font-normal">ر.س</span></span> },
+                            { label: 'المساحات', val: <span>{Number(project.min_available_area).toLocaleString('en-US')} <span className="text-xs opacity-60 font-normal">م²</span></span> },
                             { label: 'نوع الوحدات', val: project.unit_types.split(',')[0] },
-                            { label: 'عدد الوحدات', val: project.available_units }
+                            { label: 'الوحدات المتاحة', val: `${project.available_units} / ${project.total_units || '?'}` }
                         ].map((stat, i) => (
                             <div key={i} className="bg-white p-6 rounded-3xl border border-slate-100 shadow-[0_10px_30px_-15px_rgba(0,0,0,0.05)] text-center group hover:-translate-y-1 transition-transform duration-300">
                                 <span className="block text-purple-400 text-xs font-bold uppercase tracking-wider mb-2">{stat.label}</span>
@@ -252,10 +282,10 @@ const ProjectModal: React.FC<{ project: Project; onClose: () => void }> = ({ pro
                     {/* Content Grid */}
                     <div className="grid md:grid-cols-3 gap-10">
 
-                        {/* Right Column: AI & Amenities */}
+                        {/* Right Column: Details & Tables */}
                         <div className="md:col-span-2 space-y-10">
 
-                            {/* AI Pitch */}
+                            {/* Why this project? */}
                             <div className="bg-gradient-to-br from-white to-[#f8e4ff]/30 p-8 rounded-[2.5rem] border border-white shadow-xl shadow-purple-900/5 relative overflow-hidden">
                                 <div className="absolute top-0 right-0 w-32 h-32 bg-[#7434bc]/5 rounded-bl-[100px] -z-0" />
                                 <div className="relative z-10">
@@ -268,26 +298,24 @@ const ProjectModal: React.FC<{ project: Project; onClose: () => void }> = ({ pro
                                     <p className="text-slate-600 leading-9 text-lg font-medium text-justify">
                                         {project.sales_script}
                                     </p>
-                                    <div className="mt-8 p-6 bg-purple-50 rounded-3xl border border-purple-100">
-                                        <h4 className="text-sm font-bold text-[#7434bc] mb-2 uppercase tracking-wider">نبذة تفصيلية</h4>
-                                        <p className="text-slate-500 leading-relaxed text-sm">
-                                            {project.marketing_pitch || 'مشروع سكني متميز يتميز بموقعه الاستراتيجي وتصاميمه العصرية التي تلبي كافة احتياجات الأسرة السعودية.'}
-                                        </p>
-                                    </div>
                                 </div>
                             </div>
 
-                            {/* Tables */}
+                            {/* Detailed Info Table */}
                             <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
                                 <table className="w-full text-right">
                                     <tbody className="divide-y divide-slate-50">
                                         {[
-                                            { label: 'اسم المشروع', val: project.project_name },
-                                            { label: 'حي المشروع', val: project.district },
-                                            { label: 'غرف النوم', val: project.min_bedrooms === project.max_bedrooms ? `${project.min_bedrooms} غرف نوم` : `من ${project.min_bedrooms} إلى ${project.max_bedrooms} غرف نوم` },
-                                            { label: 'تصنيف العقار', val: project.project_type || 'سكني' },
-                                            { label: 'حالة التوفر', val: `${project.status} (${project.available_units} وحدة)` },
-                                        ].map((row, i) => (
+                                            { label: 'المالك / المطور', val: project.owner },
+                                            { label: 'كود المشروع', val: project.project_code },
+                                            { label: 'تاريخ الافتتاح', val: project.opening_date },
+                                            { label: 'الحي', val: project.district },
+                                            { label: 'حالة المشروع', val: project.project_status },
+                                            { label: 'غرف النوم', val: project.min_available_bedrooms === project.max_available_bedrooms ? `${project.min_available_bedrooms}` : `من ${project.min_available_bedrooms} إلى ${project.max_available_bedrooms}` },
+                                            { label: 'إجمالي الوحدات', val: project.total_units },
+                                            { label: 'تم بيع', val: `${project.sold_units || 0} وحدة` },
+                                            { label: 'نسبة البيع', val: project.sales_percentage ? `${project.sales_percentage}%` : '-' },
+                                        ].map((row, i) => row.val && (
                                             <tr key={i} className="hover:bg-slate-50/50 transition-colors">
                                                 <td className="px-8 py-5 font-bold text-slate-400 text-sm w-1/3">{row.label}</td>
                                                 <td className="px-8 py-5 font-bold text-slate-800 text-base">{row.val}</td>
@@ -298,14 +326,57 @@ const ProjectModal: React.FC<{ project: Project; onClose: () => void }> = ({ pro
                             </div>
                         </div>
 
-                        {/* Left Column: Actions & Amenities */}
+                        {/* Left Column: Actions, Media & Amenities */}
                         <div className="space-y-6">
+
+                            {/* Media Links (Images/Videos) */}
+                            {(project.videos_url || project.images_url) && (
+                                <div className="bg-slate-900 text-white p-8 rounded-[2.5rem] shadow-xl relative overflow-hidden group">
+                                    <div className="absolute inset-0 bg-gradient-to-br from-purple-600/20 to-transparent" />
+                                    <h3 className="text-lg font-black mb-6 relative z-10">معرض الوسائط</h3>
+                                    <div className="space-y-3 relative z-10">
+                                        {project.videos_url && (
+                                            <a href={project.videos_url} target="_blank" rel="noreferrer" className="w-full h-14 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-2xl flex items-center px-4 gap-3 transition-colors border border-white/5">
+                                                <div className="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center text-red-500">
+                                                    <div className="w-0 h-0 border-t-[5px] border-t-transparent border-l-[8px] border-l-current border-b-[5px] border-b-transparent ml-1" />
+                                                </div>
+                                                <span className="font-bold text-sm">شاهد الفيديوهات</span>
+                                            </a>
+                                        )}
+                                        {project.images_url && (
+                                            <a href={project.images_url} target="_blank" rel="noreferrer" className="w-full h-14 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-2xl flex items-center px-4 gap-3 transition-colors border border-white/5">
+                                                <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400">
+                                                    <Maximize className="w-4 h-4" />
+                                                </div>
+                                                <span className="font-bold text-sm">صور المشروع</span>
+                                            </a>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Buttons */}
+                            <div className="sticky top-8 space-y-4">
+                                {project.brochure_url && (
+                                    <a href={project.brochure_url} target="_blank" rel="noreferrer" className="w-full h-16 bg-[#7434bc] hover:bg-[#5d2a96] text-white rounded-2xl font-bold flex items-center justify-center gap-3 transition-all shadow-xl shadow-[#7434bc]/20 hover:-translate-y-1">
+                                        <Building2 className="w-5 h-5" />
+                                        تحميل البروشور
+                                    </a>
+                                )}
+                                {project.location_url && (
+                                    <a href={project.location_url} target="_blank" rel="noreferrer" className="w-full h-16 bg-white text-[#7434bc] border-2 border-[#7434bc]/20 hover:border-[#7434bc] rounded-2xl font-bold flex items-center justify-center gap-3 transition-all hover:shadow-[0_4px_20px_-4px_rgba(116,52,188,0.2)] hover:-translate-y-1">
+                                        <MapPin className="w-5 h-5" />
+                                        عرض على الخريطة
+                                    </a>
+                                )}
+                            </div>
+
                             {/* Amenities Bubbles */}
-                            {project.amenities && (
-                                <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
+                            {project.facilities && (
+                                <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm mt-6">
                                     <h3 className="text-lg font-black text-slate-800 mb-6">المرافق</h3>
                                     <div className="flex flex-wrap gap-2">
-                                        {project.amenities.split(',').map((amenity, i) => (
+                                        {project.facilities.split(',').map((amenity, i) => (
                                             <span key={i} className="px-4 py-2 bg-slate-50 text-slate-600 rounded-xl font-bold text-xs border border-slate-100">
                                                 {amenity.trim()}
                                             </span>
@@ -313,22 +384,6 @@ const ProjectModal: React.FC<{ project: Project; onClose: () => void }> = ({ pro
                                     </div>
                                 </div>
                             )}
-
-                            {/* Buttons */}
-                            <div className="sticky top-8 space-y-4">
-                                {project.brochure_link && (
-                                    <a href={project.brochure_link} target="_blank" rel="noreferrer" className="w-full h-16 bg-[#7434bc] hover:bg-[#5d2a96] text-white rounded-2xl font-bold flex items-center justify-center gap-3 transition-all shadow-xl shadow-[#7434bc]/20 hover:-translate-y-1">
-                                        <Building2 className="w-5 h-5" />
-                                        تحميل البروشور
-                                    </a>
-                                )}
-                                {project.location_link && (
-                                    <a href={project.location_link} target="_blank" rel="noreferrer" className="w-full h-16 bg-white text-[#7434bc] border-2 border-[#7434bc]/20 hover:border-[#7434bc] rounded-2xl font-bold flex items-center justify-center gap-3 transition-all hover:shadow-[0_4px_20px_-4px_rgba(116,52,188,0.2)] hover:-translate-y-1">
-                                        <MapPin className="w-5 h-5" />
-                                        عرض على الخريطة
-                                    </a>
-                                )}
-                            </div>
                         </div>
 
                     </div>
@@ -361,7 +416,7 @@ const ResultCard: React.FC<{ project: Project; onClick: () => void }> = ({ proje
                     <h3 className="text-xl font-black text-slate-900 group-hover:text-[#7434bc] transition-colors leading-tight mb-2">{project.project_name}</h3>
                     <p className="text-xs text-slate-400 font-bold flex items-center gap-1.5 uppercase tracking-wide">
                         <MapPin className="w-3.5 h-3.5" />
-                        {project.district} • {project.zone}
+                        {project.district} • {project.direction}
                     </p>
                 </div>
                 <div className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 shadow-md ${colors.bg} ${colors.text}`}>
@@ -373,11 +428,11 @@ const ResultCard: React.FC<{ project: Project; onClick: () => void }> = ({ proje
             <div className="grid grid-cols-2 gap-4 mb-6 relative z-10">
                 <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 group-hover:border-[#7434bc]/10 transition-colors">
                     <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1">يبدأ من</span>
-                    <span className="text-sm font-black text-slate-800">{Number(project.min_price_available).toLocaleString('en-US')} <span className="text-[10px] font-normal">ر.س</span></span>
+                    <span className="text-sm font-black text-slate-800">{Number(project.min_available_price).toLocaleString('en-US')} <span className="text-[10px] font-normal">ر.س</span></span>
                 </div>
                 <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 group-hover:border-[#7434bc]/10 transition-colors">
                     <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1">المساحة</span>
-                    <span className="text-sm font-black text-slate-800">{Number(project.min_area_available).toLocaleString('en-US')} <span className="text-[10px] font-normal">م²</span></span>
+                    <span className="text-sm font-black text-slate-800">{Number(project.min_available_area).toLocaleString('en-US')} <span className="text-[10px] font-normal">م²</span></span>
                 </div>
             </div>
 
@@ -398,7 +453,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
 
 const App: React.FC = () => {
     const [filters, setFilters] = useState<SearchFilters>({
-        unitType: '', zone: 'شمال', region: 'الرياض', district: '', maxPrice: 1500000, minArea: 200
+        unitType: '', direction: 'شمال', region: 'الرياض', district: '', maxPrice: 1500000, minArea: 200
     });
 
     const [districts, setDistricts] = useState<string[]>([]);
@@ -414,12 +469,12 @@ const App: React.FC = () => {
     useEffect(() => {
         const fetchDistricts = async () => {
             try {
-                const res = await axios.get(`${API_URL}/districts?zone=${filters.zone}&city=${filters.region}`);
+                const res = await axios.get(`${API_URL}/districts?direction=${filters.direction}&city=${filters.region}`);
                 setDistricts(res.data);
             } catch (e) { console.error("Failed to fetch districts", e); }
         };
         fetchDistricts();
-    }, [filters.zone, filters.region]);
+    }, [filters.direction, filters.region]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         setFilters(prev => ({ ...prev, [e.target.name]: e.target.value }));
@@ -474,7 +529,7 @@ const App: React.FC = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-8 mb-10">
                             <SelectField name="region" label="المدينة" icon={MapPin} value={filters.region} onChange={handleInputChange} options={[{ label: 'الرياض', value: 'الرياض' }, { label: 'جدة', value: 'جدة' }]} />
                             <SelectField name="unitType" label="نوع الوحدة" icon={Home} value={filters.unitType} onChange={handleInputChange} options={[{ label: 'الكل', value: '' }, { label: 'شقة', value: 'شقة' }, { label: 'فيلا', value: 'فيلا' }, { label: 'دور', value: 'دور' }]} />
-                            <SelectField name="zone" label="الاتجاه" icon={MapPin} value={filters.zone} onChange={handleInputChange} options={[{ label: 'شمال', value: 'شمال' }, { label: 'جنوب', value: 'جنوب' }, { label: 'شرق', value: 'شرق' }, { label: 'غرب', value: 'غرب' }]} />
+                            <SelectField name="direction" label="الاتجاه" icon={MapPin} value={filters.direction} onChange={handleInputChange} options={[{ label: 'شمال', value: 'شمال' }, { label: 'جنوب', value: 'جنوب' }, { label: 'شرق', value: 'شرق' }, { label: 'غرب', value: 'غرب' }]} />
                             <Combobox label="الحي المفضل" icon={Search} value={filters.district} onChange={(val) => setFilters(prev => ({ ...prev, district: val }))} options={districts} placeholder="ابحث عن حي..." />
 
                             <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-10 pt-6 border-t border-purple-50">
@@ -482,6 +537,12 @@ const App: React.FC = () => {
                                 <SliderInput label="أقل مساحة" icon={Maximize} value={filters.minArea} onChange={(val) => setFilters(prev => ({ ...prev, minArea: val }))} min={100} max={1000} step={10} unit="م²" shortcuts={[150, 200, 250, 350]} />
                             </div>
                         </div>
+
+                        {error && (
+                            <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-xl text-red-600 font-bold text-center animate-in fade-in slide-in-from-top-2">
+                                {error}
+                            </div>
+                        )}
 
                         <button
                             onClick={handleSearch}
