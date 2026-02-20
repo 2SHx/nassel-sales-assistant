@@ -88,10 +88,8 @@ echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$SUPABASE_KEY" >> .env.production
 echo "NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=$GOOGLE_MAPS_API_KEY" >> .env.production
 
 # Build and push using Cloud Build to Artifact Registry
-gcloud builds submit --tag ${ARTIFACT_REGISTRY}/${FRONTEND_SERVICE} \
-    --build-arg "NEXT_PUBLIC_SUPABASE_URL=$SUPABASE_URL" \
-    --build-arg "NEXT_PUBLIC_SUPABASE_ANON_KEY=$SUPABASE_KEY" \
-    --build-arg "NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=$GOOGLE_MAPS_API_KEY"
+gcloud builds submit --config cloudbuild.yaml \
+    --substitutions _SUPABASE_URL="$SUPABASE_URL",_SUPABASE_KEY="$SUPABASE_KEY",_GOOGLE_MAPS_API_KEY="$GOOGLE_MAPS_API_KEY",_IMAGE_NAME="${ARTIFACT_REGISTRY}/${FRONTEND_SERVICE}"
 
 # Deploy to Cloud Run
 gcloud run deploy $FRONTEND_SERVICE \
