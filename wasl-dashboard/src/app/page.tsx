@@ -1,3 +1,5 @@
+import { redirect } from 'next/navigation';
+
 export default function Home() {
-    return <div>Hello Minimal World</div>
+    redirect('/dashboard');
 }
