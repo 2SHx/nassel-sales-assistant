@@ -13,6 +13,16 @@ BACKEND_SERVICE="nassel-backend"
 FRONTEND_SERVICE="nassel-frontend"
 ARTIFACT_REGISTRY="${REGION}-docker.pkg.dev/${PROJECT_ID}/nassel-app"
 
+# Load environment variables from .env if present
+if [ -f frontend/.env ]; then
+    echo "📄 Loading environment variables from frontend/.env"
+    export $(grep -v '^#' frontend/.env | xargs)
+    # Map VITE_ variables to the ones used in this script if needed
+    SUPABASE_URL="${SUPABASE_URL:-$VITE_SUPABASE_URL}"
+    SUPABASE_KEY="${SUPABASE_KEY:-$VITE_SUPABASE_ANON_KEY}"
+    GOOGLE_MAPS_API_KEY="${GOOGLE_MAPS_API_KEY:-$VITE_GOOGLE_MAPS_API_KEY}"
+fi
+
 echo "🚀 نَصِل Deployment to GCP Cloud Run"
 echo "======================================"
 
@@ -75,9 +85,13 @@ cd wasl-dashboard
 # Next.js uses NEXT_PUBLIC_ prefix for client-side env vars
 echo "NEXT_PUBLIC_SUPABASE_URL=$SUPABASE_URL" > .env.production
 echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$SUPABASE_KEY" >> .env.production
+echo "NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=$GOOGLE_MAPS_API_KEY" >> .env.production
 
 # Build and push using Cloud Build to Artifact Registry
-gcloud builds submit --tag ${ARTIFACT_REGISTRY}/${FRONTEND_SERVICE}
+gcloud builds submit --tag ${ARTIFACT_REGISTRY}/${FRONTEND_SERVICE} \
+    --build-arg "NEXT_PUBLIC_SUPABASE_URL=$SUPABASE_URL" \
+    --build-arg "NEXT_PUBLIC_SUPABASE_ANON_KEY=$SUPABASE_KEY" \
+    --build-arg "NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=$GOOGLE_MAPS_API_KEY"
 
 # Deploy to Cloud Run
 gcloud run deploy $FRONTEND_SERVICE \
@@ -85,7 +99,7 @@ gcloud run deploy $FRONTEND_SERVICE \
     --platform managed \
     --region $REGION \
     --allow-unauthenticated \
-    --set-env-vars "SUPABASE_URL=$SUPABASE_URL,SUPABASE_KEY=$SUPABASE_KEY"
+    --set-env-vars "SUPABASE_URL=$SUPABASE_URL,SUPABASE_KEY=$SUPABASE_KEY,GOOGLE_MAPS_API_KEY=$GOOGLE_MAPS_API_KEY"
 
 # Get frontend URL
 FRONTEND_URL=$(gcloud run services describe $FRONTEND_SERVICE --region $REGION --format 'value(status.url)')
