@@ -68,11 +68,13 @@ cd ..
 
 # ----- FRONTEND DEPLOYMENT -----
 echo ""
-echo "🔨 Building and deploying FRONTEND..."
-cd frontend
+echo "🔨 Building and deploying FRONTEND (wasl-dashboard)..."
+cd wasl-dashboard
 
 # Update API URL in environment (create .env.production)
-echo "VITE_API_URL=$BACKEND_URL" > .env.production
+# Next.js uses NEXT_PUBLIC_ prefix for client-side env vars
+echo "NEXT_PUBLIC_SUPABASE_URL=$SUPABASE_URL" > .env.production
+echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$SUPABASE_KEY" >> .env.production
 
 # Build and push using Cloud Build to Artifact Registry
 gcloud builds submit --tag ${ARTIFACT_REGISTRY}/${FRONTEND_SERVICE}
@@ -82,7 +84,8 @@ gcloud run deploy $FRONTEND_SERVICE \
     --image ${ARTIFACT_REGISTRY}/${FRONTEND_SERVICE} \
     --platform managed \
     --region $REGION \
-    --allow-unauthenticated
+    --allow-unauthenticated \
+    --set-env-vars "SUPABASE_URL=$SUPABASE_URL,SUPABASE_KEY=$SUPABASE_KEY"
 
 # Get frontend URL
 FRONTEND_URL=$(gcloud run services describe $FRONTEND_SERVICE --region $REGION --format 'value(status.url)')
