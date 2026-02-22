@@ -29,6 +29,12 @@ export function Sidebar() {
             href: '/units',
             active: pathname.startsWith('/units'),
         },
+        {
+            label: 'الإعدادات',
+            icon: Settings,
+            href: '/settings',
+            active: pathname.startsWith('/settings'),
+        },
     ];
 
     return (

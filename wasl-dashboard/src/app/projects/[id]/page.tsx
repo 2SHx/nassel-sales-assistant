@@ -3,14 +3,16 @@
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { supabase } from '@/lib/supabase';
-import { Project, Unit } from '@/lib/types';
+import { Project, Unit, FormSchemaField } from '@/lib/types';
+import { getFormSchema } from '@/actions/settings';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
     MapPin, FileText, Video, Image as ImageIcon, CheckCircle2, Ruler,
-    BedDouble, Bath, ChevronDown, Copy, Compass, ArrowUpRight, TrendingUp
+    BedDouble, Bath, ChevronDown, Copy, Compass, ArrowUpRight, TrendingUp,
+    Edit2, Archive
 } from 'lucide-react';
 import { Loader2 } from 'lucide-react';
 import { ClientUnitMap } from '@/components/units/client-unit-map';
@@ -21,6 +23,12 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+
+import { useRouter } from 'next/navigation';
+import { ProjectForm } from '@/components/forms/project-form';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { archiveProjectAction } from '@/actions/projects';
+import { toast } from 'sonner';
 
 // Normalize direction values from DB (feminine→short form)
 function normalizeDirection(dir: string | null | undefined): string {
@@ -45,13 +53,30 @@ const ProjectMap = dynamic(() => import('@/components/projects/project-map'), {
 });
 
 export default function ProjectDetailsPage({ params }: { params: { id: string } }) {
+    const router = useRouter();
     const [project, setProject] = useState<Project | null>(null);
     const [units, setUnits] = useState<Unit[]>([]);
+    const [rawUnits, setRawUnits] = useState<any[]>([]);
+    const [schema, setSchema] = useState<FormSchemaField[]>([]);
     const [loading, setLoading] = useState(true);
+
+    const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
+
+    const handleArchiveConfirmed = async () => {
+        await archiveProjectAction(params.id);
+        setArchiveDialogOpen(false);
+        router.push('/projects');
+    };
 
     useEffect(() => {
         async function fetchData() {
             setLoading(true);
+
+            const schemaRes = await getFormSchema('project');
+            if (schemaRes.success && schemaRes.data) {
+                setSchema(schemaRes.data);
+            }
+
             // Fetch Project
             const { data: pData } = await supabase.from('projects').select('*').eq('project_id', params.id).single();
 
@@ -78,7 +103,8 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
                     description: pData.marketing_pitch,
                     direction: normalizeDirection(pData.direction),
                     videoUrl: pData.video_url || null,
-                    brochureUrl: pData.brochure_url || null
+                    brochureUrl: pData.brochure_url || null,
+                    customFields: pData.custom_fields || {}
                 };
                 setProject(mappedProject);
 
@@ -89,6 +115,7 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
                     .eq('project_id', params.id);
 
                 if (uData) {
+                    setRawUnits(uData);
                     const mappedUnits = uData.map((u: any) => ({
                         id: u.id,
                         unitNumber: u.unit_number,
@@ -207,8 +234,7 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
 
     const copyToClipboard = (text: string) => {
         navigator.clipboard.writeText(text);
-        // You might want to add a toast here
-        alert('تم النسخ بنجاح');
+        toast.success('تم النسخ بنجاح');
     };
 
     const handleAction = (type: 'map' | 'brochure' | 'video' | 'photos', action: 'open' | 'copy') => {
@@ -230,7 +256,7 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
 
         if (action === 'open') {
             if (link && link !== '#') window.open(link, '_blank');
-            else alert('الرابط غير متوفر');
+            else toast.info('الرابط غير متوفر');
         } else {
             copyToClipboard(link);
         }
@@ -253,6 +279,54 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
                         <ImageIcon className="h-16 w-16 opacity-30" />
                     </div>
                 )}
+                <div className="absolute top-6 left-6 z-20 flex items-center gap-2">
+                    <Dialog>
+                        <DialogTrigger asChild>
+                            <Button variant="outline" size="sm" className="bg-white/10 backdrop-blur-md border-white/20 text-white hover:bg-white/20 hover:text-white border-0 gap-2">
+                                <Edit2 className="h-4 w-4" />
+                                تعديل
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" dir="rtl">
+                            <DialogHeader>
+                                <DialogTitle>تعديل المشروع</DialogTitle>
+                            </DialogHeader>
+                            <ProjectForm initialData={{
+                                id: project.id,
+                                name: project.name,
+                                city: project.location.city,
+                                district: project.location.district,
+                                direction: project.direction || '',
+                                amenities: project.amenities,
+                                mapCoordinates: { lat: project.location.lat, lng: project.location.lng },
+                                marketingPitch: (project as any).marketingPitch || '',
+                                manychat: (project as any).manychat || '',
+                                brochureUrl: project.brochureUrl || '',
+                                videoUrl: project.videoUrl || '',
+                                photos: project.images || []
+                            }} rawUnits={rawUnits} />
+                        </DialogContent>
+                    </Dialog>
+
+                    <Dialog open={archiveDialogOpen} onOpenChange={setArchiveDialogOpen}>
+                        <DialogTrigger asChild>
+                            <Button variant="destructive" size="sm" className="gap-2 bg-red-500/80 backdrop-blur-md border-0 text-white hover:bg-red-600/90">
+                                <Archive className="h-4 w-4" />
+                                أرشفة
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent dir="rtl">
+                            <DialogHeader>
+                                <DialogTitle>تأكيد الأرشفة</DialogTitle>
+                            </DialogHeader>
+                            <p className="text-muted-foreground my-4">هل أنت متأكد من أرشفة هذا المشروع؟ سيتم أرشفة أو إخفاء جميع الوحدات المرتبطة به أيضاً.</p>
+                            <div className="flex justify-end gap-3 mt-4">
+                                <Button variant="outline" onClick={() => setArchiveDialogOpen(false)}>إلغاء</Button>
+                                <Button variant="destructive" onClick={handleArchiveConfirmed}>تأكيد الأرشفة</Button>
+                            </div>
+                        </DialogContent>
+                    </Dialog>
+                </div>
                 <div className="absolute bottom-0 left-0 right-0 p-8 z-20 text-white">
                     <div className="flex flex-col gap-4">
                         <div className="flex items-center gap-2">
@@ -323,6 +397,28 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
                                     </div>
                                 </CardContent>
                             </Card>
+
+                            {schema.length > 0 && Object.keys(project.customFields || {}).length > 0 && (
+                                <Card className="rounded-2xl border bg-card shadow-sm overflow-hidden">
+                                    <CardHeader className="bg-gray-50/50 border-b px-6 py-4">
+                                        <CardTitle className="flex items-center gap-2 text-xl">
+                                            <FileText className="h-5 w-5 text-primary" />
+                                            معلومات إضافية مخصصة
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="p-6">
+                                        <div className="grid grid-cols-2 gap-y-4 gap-x-8 text-sm">
+                                            {schema.map(field => {
+                                                const val = project.customFields?.[field.field_key];
+                                                if (val === undefined || val === null || val === '') return null;
+                                                let displayVal = val;
+                                                if (field.field_type === 'boolean') displayVal = val ? 'نعم' : 'لا';
+                                                return <InfoRow key={field.id} label={field.field_label} value={String(displayVal)} />
+                                            })}
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            )}
 
                             {/* Map Section */}
                             <Card className="rounded-2xl border bg-card shadow-sm overflow-hidden min-h-[400px]">

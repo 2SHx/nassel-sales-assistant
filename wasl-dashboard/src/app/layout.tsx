@@ -4,6 +4,7 @@ import "./globals.css";
 import "leaflet/dist/leaflet.css";
 import { Sidebar } from "@/components/layout/sidebar";
 import { cn } from "@/lib/utils";
+import { Toaster } from "@/components/ui/sonner";
 
 const cairo = Cairo({ subsets: ["arabic", "latin"] });
 
@@ -26,6 +27,7 @@ export default function RootLayout({
             {children}
           </main>
         </div>
+        <Toaster position="top-center" richColors />
       </body>
     </html>
   );

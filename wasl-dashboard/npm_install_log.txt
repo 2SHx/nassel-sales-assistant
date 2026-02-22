@@ -1,0 +1,71 @@
+npm verb cli /usr/local/bin/node /usr/local/bin/npm
+npm info using npm@10.5.2
+npm info using node@v20.13.1
+npm verb title npm install
+npm verb argv "install" "--loglevel" "verbose"
+npm verb logfile logs-max:10 dir:/Users/mac/.npm/_logs/2026-02-18T16_23_24_472Z-
+npm verb logfile /Users/mac/.npm/_logs/2026-02-18T16_23_24_472Z-debug-0.log
+npm verb shrinkwrap failed to load node_modules/.package-lock.json out of date, updated: node_modules
+npm verb reify failed optional dependency /Users/mac/Desktop/Sales assistant/wasl-dashboard/node_modules/@unrs/resolver-binding-win32-x64-msvc
+npm verb reify failed optional dependency /Users/mac/Desktop/Sales assistant/wasl-dashboard/node_modules/@unrs/resolver-binding-win32-ia32-msvc
+npm verb reify failed optional dependency /Users/mac/Desktop/Sales assistant/wasl-dashboard/node_modules/@unrs/resolver-binding-win32-arm64-msvc
+npm verb reify failed optional dependency /Users/mac/Desktop/Sales assistant/wasl-dashboard/node_modules/@unrs/resolver-binding-wasm32-wasi
+npm verb reify failed optional dependency /Users/mac/Desktop/Sales assistant/wasl-dashboard/node_modules/@napi-rs/wasm-runtime
+npm verb reify failed optional dependency /Users/mac/Desktop/Sales assistant/wasl-dashboard/node_modules/@emnapi/core
+npm verb reify failed optional dependency /Users/mac/Desktop/Sales assistant/wasl-dashboard/node_modules/@emnapi/runtime
+npm verb reify failed optional dependency /Users/mac/Desktop/Sales assistant/wasl-dashboard/node_modules/@tybys/wasm-util
+npm verb reify failed optional dependency /Users/mac/Desktop/Sales assistant/wasl-dashboard/node_modules/@emnapi/wasi-threads
+npm verb reify failed optional dependency /Users/mac/Desktop/Sales assistant/wasl-dashboard/node_modules/@unrs/resolver-binding-linux-x64-musl
+npm verb reify failed optional dependency /Users/mac/Desktop/Sales assistant/wasl-dashboard/node_modules/@unrs/resolver-binding-linux-x64-gnu
+npm verb reify failed optional dependency /Users/mac/Desktop/Sales assistant/wasl-dashboard/node_modules/@unrs/resolver-binding-linux-s390x-gnu
+npm verb reify failed optional dependency /Users/mac/Desktop/Sales assistant/wasl-dashboard/node_modules/@unrs/resolver-binding-linux-riscv64-musl
+npm verb reify failed optional dependency /Users/mac/Desktop/Sales assistant/wasl-dashboard/node_modules/@unrs/resolver-binding-linux-riscv64-gnu
+npm verb reify failed optional dependency /Users/mac/Desktop/Sales assistant/wasl-dashboard/node_modules/@unrs/resolver-binding-linux-ppc64-gnu
+npm verb reify failed optional dependency /Users/mac/Desktop/Sales assistant/wasl-dashboard/node_modules/@unrs/resolver-binding-linux-arm64-musl
+npm verb reify failed optional dependency /Users/mac/Desktop/Sales assistant/wasl-dashboard/node_modules/@unrs/resolver-binding-linux-arm64-gnu
+npm verb reify failed optional dependency /Users/mac/Desktop/Sales assistant/wasl-dashboard/node_modules/@unrs/resolver-binding-linux-arm-musleabihf
+npm verb reify failed optional dependency /Users/mac/Desktop/Sales assistant/wasl-dashboard/node_modules/@unrs/resolver-binding-linux-arm-gnueabihf
+npm verb reify failed optional dependency /Users/mac/Desktop/Sales assistant/wasl-dashboard/node_modules/@unrs/resolver-binding-freebsd-x64
+npm verb reify failed optional dependency /Users/mac/Desktop/Sales assistant/wasl-dashboard/node_modules/@unrs/resolver-binding-darwin-x64
+npm verb reify failed optional dependency /Users/mac/Desktop/Sales assistant/wasl-dashboard/node_modules/@unrs/resolver-binding-android-arm64
+npm verb reify failed optional dependency /Users/mac/Desktop/Sales assistant/wasl-dashboard/node_modules/@unrs/resolver-binding-android-arm-eabi
+npm verb reify failed optional dependency /Users/mac/Desktop/Sales assistant/wasl-dashboard/node_modules/@next/swc-win32-x64-msvc
+npm verb reify failed optional dependency /Users/mac/Desktop/Sales assistant/wasl-dashboard/node_modules/@next/swc-win32-ia32-msvc
+npm verb reify failed optional dependency /Users/mac/Desktop/Sales assistant/wasl-dashboard/node_modules/@next/swc-win32-arm64-msvc
+npm verb reify failed optional dependency /Users/mac/Desktop/Sales assistant/wasl-dashboard/node_modules/@next/swc-linux-x64-musl
+npm verb reify failed optional dependency /Users/mac/Desktop/Sales assistant/wasl-dashboard/node_modules/@next/swc-linux-x64-gnu
+npm verb reify failed optional dependency /Users/mac/Desktop/Sales assistant/wasl-dashboard/node_modules/@next/swc-linux-arm64-musl
+npm verb reify failed optional dependency /Users/mac/Desktop/Sales assistant/wasl-dashboard/node_modules/@next/swc-linux-arm64-gnu
+npm verb reify failed optional dependency /Users/mac/Desktop/Sales assistant/wasl-dashboard/node_modules/@next/swc-darwin-x64
+npm http fetch POST 200 https://registry.npmjs.org/-/npm/v1/security/advisories/bulk 1444ms
+npm http fetch GET 200 https://registry.npmjs.org/glob 427ms (cache updated)
+npm http fetch GET 200 https://registry.npmjs.org/ajv 913ms (cache miss)
+npm http fetch GET 200 https://registry.npmjs.org/next 8326ms (cache updated)
+npm http fetch GET 200 https://registry.npmjs.org/@eslint%2feslintrc 126ms (cache miss)
+npm http fetch GET 200 https://registry.npmjs.org/eslint 694ms (cache miss)
+npm http fetch GET 200 https://registry.npmjs.org/@next%2feslint-plugin-next 8886ms (cache updated)
+npm http fetch GET 200 https://registry.npmjs.org/@typescript-eslint%2futils 4976ms (cache miss)
+npm http fetch GET 200 https://registry.npmjs.org/@typescript-eslint%2feslint-plugin 10622ms (cache miss)
+npm http fetch GET 200 https://registry.npmjs.org/@typescript-eslint%2ftype-utils 11450ms (cache miss)
+npm http fetch GET 200 https://registry.npmjs.org/eslint-plugin-jsx-a11y 11679ms (cache miss)
+npm http fetch GET 200 https://registry.npmjs.org/eslint-import-resolver-typescript 11713ms (cache miss)
+npm http fetch GET 200 https://registry.npmjs.org/@eslint-community%2feslint-utils 11723ms (cache miss)
+npm http fetch GET 200 https://registry.npmjs.org/eslint-plugin-import 11775ms (cache miss)
+npm http fetch GET 200 https://registry.npmjs.org/eslint-plugin-react 11967ms (cache miss)
+npm http fetch GET 200 https://registry.npmjs.org/eslint-config-next 16437ms (cache updated)
+npm http fetch GET 200 https://registry.npmjs.org/eslint-plugin-react-hooks 17829ms (cache miss)
+npm http fetch GET 200 https://registry.npmjs.org/@typescript-eslint%2fparser 25270ms (cache miss)
+
+added 2 packages, changed 1 package, and audited 557 packages in 5m
+
+155 packages are looking for funding
+  run `npm fund` for details
+
+12 vulnerabilities (8 moderate, 4 high)
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+npm verb exit 0
+npm info ok 

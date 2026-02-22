@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { supabase } from '@/lib/supabase';
-import { Unit, Project } from '@/lib/types';
+import { Unit, Project, FormSchemaField } from '@/lib/types';
+import { getFormSchema } from '@/actions/settings';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,7 +12,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
     BedDouble, Bath, Ruler, MapPin, Building2, CheckCircle2,
     ArrowRight, FileText, Video, Image as ImageIcon, Box, Compass,
-    ChevronDown, Copy, HomeIcon, ArrowUpRight, Calendar, ShieldCheck, Layers
+    ChevronDown, Copy, HomeIcon, ArrowUpRight, Calendar, ShieldCheck, Layers,
+    Edit2, Archive
 } from 'lucide-react';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
@@ -21,6 +23,12 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+
+import { useRouter } from 'next/navigation';
+import { UnitForm } from '@/components/forms/unit-form';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { archiveUnitAction } from '@/actions/units';
+import { toast } from 'sonner';
 
 // Normalize direction values from DB (feminine→short form)
 function normalizeDirection(dir: string | null | undefined): string {
@@ -45,13 +53,28 @@ const ProjectMap = dynamic(() => import('@/components/projects/project-map'), {
 });
 
 export default function UnitDetailsPage({ params }: { params: { id: string } }) {
+    const router = useRouter();
     const [unit, setUnit] = useState<Unit | null>(null);
     const [project, setProject] = useState<Project | null>(null);
+    const [schema, setSchema] = useState<FormSchemaField[]>([]);
     const [loading, setLoading] = useState(true);
+
+    const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
+
+    const handleArchiveConfirmed = async () => {
+        await archiveUnitAction(params.id);
+        setArchiveDialogOpen(false);
+        router.push('/units');
+    };
 
     useEffect(() => {
         async function fetchUnitData() {
             setLoading(true);
+
+            const schemaRes = await getFormSchema('unit');
+            if (schemaRes.success && schemaRes.data) {
+                setSchema(schemaRes.data);
+            }
 
             // 1. Fetch Unit
             const { data: uData, error: uError } = await supabase
@@ -138,6 +161,8 @@ export default function UnitDetailsPage({ params }: { params: { id: string } }) 
                     // Mapping Location from Project
                     projectLocation: projectData?.location,
 
+                    customFields: uData.custom_fields || {},
+
                     // Missing in DB currently -> Undefined
                     videoUrl: undefined,
                     virtualTourUrl: undefined,
@@ -158,7 +183,7 @@ export default function UnitDetailsPage({ params }: { params: { id: string } }) 
 
     const copyToClipboard = (text: string) => {
         navigator.clipboard.writeText(text);
-        alert('تم النسخ بنجاح');
+        toast.success('تم النسخ بنجاح');
     };
 
     const generateUnitMessage = () => {
@@ -196,6 +221,74 @@ export default function UnitDetailsPage({ params }: { params: { id: string } }) 
                             العودة للوحدات
                         </Link>
                     </Button>
+                </div>
+
+                <div className="absolute top-6 left-6 z-20 flex items-center gap-2">
+                    <Dialog>
+                        <DialogTrigger asChild>
+                            <Button variant="outline" size="sm" className="bg-white/10 backdrop-blur-md border-white/20 text-white hover:bg-white/20 hover:text-white border-0 gap-2">
+                                <Edit2 className="h-4 w-4" />
+                                تعديل
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" dir="rtl">
+                            <DialogHeader>
+                                <DialogTitle>تعديل الوحدة</DialogTitle>
+                            </DialogHeader>
+                            <UnitForm initialData={{
+                                id: unit.id,
+                                projectId: unit.projectId,
+                                unitCode: unit.unitCode || '',
+                                unitModel: unit.model || '',
+                                developer: unit.developer || '',
+                                status: unit.status,
+                                type: unit.type === 'Apartment' || unit.type === 'Villa' || unit.type === 'Duplex' || unit.type === 'Office' || unit.type === 'Retail' ? unit.type : 'Other',
+                                floor: unit.floor?.toString() || '',
+                                elevatorStatus: unit.elevatorStatus ? String(unit.elevatorStatus) : '',
+                                netArea: unit.area,
+                                privateArea: unit.specialArea || 0,
+                                totalArea: unit.totalArea || unit.area,
+                                price: unit.price,
+                                bedrooms: unit.bedrooms || 0,
+                                bathrooms: unit.bathrooms || 0,
+                                components: unit.unitComponents ? unit.unitComponents.split(',') : (unit.features ? unit.features.split(',') : []),
+                                amenities: unit.amenities || [],
+                                photos: unit.images || [],
+                                videoUrl: unit.videoUrl || '',
+                                virtualTourUrl: unit.virtualTourUrl || '',
+                                brochureUrl: unit.unitBrochure || '',
+                                city: unit.projectLocation?.city || '',
+                                district: unit.projectLocation?.district || '',
+                                direction: unit.orientation || '',
+                                facade: '',
+                                projectOpeningDate: unit.projectOpeningDate || '',
+                                unitNumber: unit.unitNumber?.toString() || '',
+                                buildingNumber: unit.buildingNumber?.toString() || '',
+                                farzNumber: unit.sortingNumber?.toString() || '',
+                                patioArea: unit.patioArea || 0,
+                                titleDeedArea: unit.area
+                            }} />
+                        </DialogContent>
+                    </Dialog>
+
+                    <Dialog open={archiveDialogOpen} onOpenChange={setArchiveDialogOpen}>
+                        <DialogTrigger asChild>
+                            <Button variant="destructive" size="sm" className="gap-2 bg-red-500/80 backdrop-blur-md border-0 text-white hover:bg-red-600/90">
+                                <Archive className="h-4 w-4" />
+                                أرشفة
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent dir="rtl">
+                            <DialogHeader>
+                                <DialogTitle>تأكيد الأرشفة</DialogTitle>
+                            </DialogHeader>
+                            <p className="text-muted-foreground my-4">هل أنت متأكد من أرشفة هذه الوحدة؟ لا يمكن التراجع عن هذا الإجراء بسهولة.</p>
+                            <div className="flex justify-end gap-3 mt-4">
+                                <Button variant="outline" onClick={() => setArchiveDialogOpen(false)}>إلغاء</Button>
+                                <Button variant="destructive" onClick={handleArchiveConfirmed}>تأكيد الأرشفة</Button>
+                            </div>
+                        </DialogContent>
+                    </Dialog>
                 </div>
 
                 <div className="absolute bottom-0 left-0 right-0 p-8 z-20 text-white">
@@ -287,7 +380,7 @@ export default function UnitDetailsPage({ params }: { params: { id: string } }) 
                                         <StatBox label="الغرف" value={unit.bedrooms} icon={<BedDouble />} />
                                         <StatBox label="دورات المياه" value={unit.bathrooms} icon={<Bath />} />
                                         <StatBox label="الطابق" value={unit.floor || '-'} icon={<Layers />} />
-                                        <StatBox label="المصعد" value={unit.elevatorStatus || '-'} icon={<ChevronDown />} />
+                                        <StatBox label="المصعد" value={unit.elevatorStatus ? String(unit.elevatorStatus) : '-'} icon={<ChevronDown />} />
                                     </div>
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 border-t border-gray-100">
@@ -403,7 +496,7 @@ export default function UnitDetailsPage({ params }: { params: { id: string } }) 
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="p-6 space-y-6 mt-2">
-                                <InfoBlock label="موعد افتتاح المشروع" value={unit.projectOpeningDate || project?.openingDate} />
+                                <InfoBlock label="موعد افتتاح المشروع" value={unit.projectOpeningDate || '-'} />
                                 <InfoBlock label="رقم العمارة" value={unit.buildingNumber} />
                                 <InfoBlock label="رقم الوحدة في المشروع" value={unit.unitNumberInProject || unit.unitNumber} />
                             </CardContent>
@@ -435,6 +528,28 @@ export default function UnitDetailsPage({ params }: { params: { id: string } }) 
                                 <AreaRow label="مساحة الفناء" value={unit.patioArea || 0} />
                             </CardContent>
                         </Card>
+
+                        {schema.length > 0 && Object.keys(unit.customFields || {}).length > 0 && (
+                            <Card className="rounded-2xl border bg-card shadow-sm overflow-hidden md:col-span-3">
+                                <CardHeader className="bg-gray-50/50 border-b px-6 py-4">
+                                    <CardTitle className="flex items-center gap-2 text-xl">
+                                        <Box className="w-5 h-5 text-primary" />
+                                        بيانات الخصائص المخصصة
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent className="p-6 mt-2">
+                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-y-6 gap-x-8 text-sm">
+                                        {schema.map(field => {
+                                            const val = unit.customFields?.[field.field_key];
+                                            if (val === undefined || val === null || val === '') return null;
+                                            let displayVal = val;
+                                            if (field.field_type === 'boolean') displayVal = val ? 'نعم' : 'لا';
+                                            return <InfoBlock key={field.id} label={field.field_label} value={String(displayVal)} />
+                                        })}
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        )}
                     </div>
                 </TabsContent>
 
@@ -516,7 +631,7 @@ function AreaRow({ label, value, isHighlight = false }: { label: string, value: 
     );
 }
 
-function ActionDropdownUnified({ icon, label, link, count, type }: { icon: React.ReactNode, label: string, link?: string, count?: number, type?: string }) {
+function ActionDropdownUnified({ icon, label, link, count, type }: { icon: React.ReactNode, label: string, link?: string | null, count?: number, type?: string }) {
     const isActive = count !== undefined ? count > 0 : !!link;
     const handleClick = () => isActive && link ? window.open(link, '_blank') : null;
 

@@ -27,6 +27,19 @@ export interface Project {
     };
     videoUrl?: string | null;
     brochureUrl?: string | null;
+    customFields?: Record<string, any>;
+}
+
+export interface FormSchemaField {
+    id: string;
+    entity_type: 'project' | 'unit';
+    field_key: string;
+    field_label: string;
+    field_type: 'text' | 'number' | 'select' | 'multi-select' | 'boolean';
+    field_options?: string[]; // stored as jsonb
+    is_required: boolean;
+    order_index: number;
+    created_at: string;
 }
 
 export interface Unit {
@@ -70,4 +83,5 @@ export interface Unit {
         city?: string;
         district?: string;
     };
+    customFields?: Record<string, any>;
 }

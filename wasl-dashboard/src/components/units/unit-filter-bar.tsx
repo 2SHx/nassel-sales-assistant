@@ -284,24 +284,24 @@ export function UnitFilterBar({ options }: UnitFilterBarProps) {
                     {/* Action Buttons: Search & Reset */}
                     <div className="flex items-center gap-2">
                         <Button
-                            className="flex-1 bg-[#8B5CF6] hover:bg-[#7c4dff] text-white"
+                            className="flex-1 bg-[#8B5CF6] hover:bg-[#7c4dff] text-white min-w-0 px-2"
                             onClick={() => {
                                 // Logic for search click can go here if needed
                                 console.log("Searching...");
                             }}
                         >
-                            <Search className="w-4 h-4 ml-2" />
-                            بحث
+                            <Search className="w-4 h-4 ml-1 shrink-0" />
+                            <span className="truncate">بحث</span>
                         </Button>
 
                         {(status !== 'All' || projectId || unitTypes.length > 0 || amenities.length > 0 || direction) && (
                             <Button
                                 variant="outline"
                                 onClick={resetFilters}
-                                className="gap-2 text-destructive hover:bg-destructive/10 hover:text-destructive hover:border-destructive"
+                                className="flex-1 gap-1 text-destructive hover:bg-destructive/10 hover:text-destructive hover:border-destructive min-w-0 px-2"
                             >
-                                <X className="h-4 w-4" />
-                                مسح الكل
+                                <X className="h-4 w-4 shrink-0" />
+                                <span className="truncate">مسح الكل</span>
                             </Button>
                         )}
                     </div>
